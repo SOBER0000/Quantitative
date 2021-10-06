@@ -11,6 +11,7 @@ import os
 
 data_root = '/Users/pengde/Desktop/Quant/data'
 
+
 def get_stock_list():
     """
     获取A股所有股票代码列表
@@ -98,41 +99,56 @@ def transfer_price_freq(data, time_freq='W'):
     return data_trans
 
 
-def get_single_finance(code, start_date):
+def get_single_finance(code, date, start_date):
     """
     获取单个股票财务指标
     :param code:        股票代码
-    :param start_date:  起始日期
+    :param date:        查询日期
+    :param start_date:  查询年份（季度）
     :return:
     """
-    data = get_fundamentals(query(indicator).filter(indicator.code == code), statDate=start_date)
+    data = get_fundamentals(query(indicator).filter(indicator.code == code), date=date, statDate=start_date)
     return data
+
+
+def get_single_valuation(code, date, start_date):
+    """
+    获取单个股票估值指标
+    :param code:        股票代码
+    :param date:        查询日期
+    :param start_date:  查询年份（季度）
+    :return:
+    """
+    data = get_fundamentals(query(valuation).filter(valuation.code == code), date=date, statDate=start_date)
+    return data
+
+
+def calculate_change_pct(data):
+    """
+    计算股票数据的涨跌幅：（当期收盘价-前期收盘价）/前期收盘价
+    :param data: dataframe，带有收盘价
+    :return: dataframe，带有涨跌幅
+    """
+    data['close_pct'] = (data['close'] - data['close'].shift(1)) / data['close'].shift(1)
+    return data
+
+
+def update_dailay_price(code, type='price'):
+    """
+    更新指定股票数据
+    :param code: 股票代码
+    :param type: 默认行情数据
+    :return:
+    """
+    file_root = data_root + '/' + type + '/' + code + '.csv'
+    if os.path.exists(file_root):
+        start_date = pd.read_csv(file_root, usecols=['date'])['date'].iloc[-1]
+        data = get_single_price(code, 'daily', start_date, datetime.date.today())
+        export_data(data, type, code, 'a')
+    else:
+        data = get_single_price(code, 'daily')
+        export_data(data, type, code)
 
 
 if __name__ == '__main__':
     print('main')
-    code = '000001.XSHE'
-    auth('18818795073', '795073')  # 账号是申请时所填写的手机号；密码为聚宽官网登录密码，新申请用户默认为手机号后6位
-    stock_list = get_stock_list()
-    file_root = data_root + '/' + 'price' + '/' + stock_list[0] + '.csv'
-    if os.path.exists(file_root):
-        print('append data')
-        start_date = pd.read_csv(file_root, usecols=['date'])['date'].iloc[-1]
-        print('=== start_date:', start_date)
-        data = get_single_price(stock_list[0], 'daily', start_date, datetime.date.today())
-        print(data)
-        export_data(data, 'price', stock_list[0], 'a')
-    else:
-        print('First')
-        data = get_single_price(stock_list[0], 'daily', '2021-08-01', '2021-08-30')
-        print(data)
-        export_data(data, 'price', stock_list[0])
-
-
-
-
-
-
-
-
-
