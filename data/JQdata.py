@@ -23,7 +23,7 @@ pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', 10)
 
 # 获取平安银行2020年日k数据
-df = get_price('000001.XSHG', start_date='2020-01-01', end_date='2020-12-31', frequency='daily')
+df = get_price('000001.XSHE', start_date='2020-01-01', end_date='2020-12-31', frequency='daily')
 
 # 转换为周K数据 开盘价、收盘价、最高价、最低价
 df['weekday'] = df.index.weekday
