@@ -47,6 +47,42 @@ def calculate_total_pct(data):
     return data
 
 
+def calculate_max_drawdown(data):
+    """
+    计算最大回撤
+    :param data:
+    :return:
+    """
+    # 计算时间周期内最大净值
+    data['roll_max'] = data['close'].rolling(window=7, min_periods=1).max()
+    # 计算当天回撤比：（谷值-峰值）/峰值 = 谷值/峰值-1
+    data['daily_dd'] = data['close'] / data['roll_max'] - 1
+    # 选取时间周期内最大回撤比，即最大回撤
+    data['max_dd'] = data['daily_dd'].rolling(window=7, min_periods=1).min()
+
+    return data
+
+
+def calculate_sharpe(data):
+    """
+    计算夏普比率：（回报率的均值 - 无风险利率）/ 回报率的标准差
+    :param data:
+    :return:日夏普比率和年化夏普比率
+    """
+    # 回报率均值 == 日涨跌幅均值（股票）
+    daily_pct = data['close'].pct_change()
+    return_avg = daily_pct.mean()
+    # 无风险利率近似于0
+    # 回报率标准差 == 日涨跌幅标准差
+    return_std = pd.DataFrame(daily_pct).std()
+    # 计算夏普比率
+    sharpe = return_avg / return_std
+    # 计算年化夏普比率(一年有252个交易日): 回报率的均值*252 - 无风险利率）/ 回报率的标准差*根号252
+    sharpe_year = sharpe * np.sqrt(252)
+
+    return sharpe, sharpe_year
+
+
 def week_period_strategy(code, time_fre, start_date=None, end_date=None):
     """
     模拟买入、卖出信号
@@ -79,15 +115,25 @@ def week_period_strategy(code, time_fre, start_date=None, end_date=None):
 
 if __name__ == '__main__':
     print('main')
-    df_pct = pd.DataFrame()
-    start_date = '2019-01-01'
-    end_date = '2020-01-01'
+    # df_pct = pd.DataFrame()
+    start_date = '2006-01-01'
+    end_date = '2021-01-01'
     auth('18818795073', '795073')  # 账号是申请时所填写的手机号；密码为聚宽官网登录密码，新申请用户默认为手机号后6位
-    shuanghui = week_period_strategy('000895.XSHE', 'daily', start_date, end_date)
-    mairui = week_period_strategy('300760.XSHE', 'daily', start_date, end_date)
-    maotai = week_period_strategy('600519.XSHG', 'daily', start_date, end_date)
-    df_pct['shuanghui_total_pct'] = shuanghui['total_pct']
-    df_pct['mairui_total_pct'] = mairui['total_pct']
-    df_pct['maotai_total_pct'] = maotai['total_pct']
-    df_pct.plot()
-    plt.show()
+    # shuanghui = week_period_strategy('000895.XSHE', 'daily', start_date, end_date)
+    # mairui = week_period_strategy('300760.XSHE', 'daily', start_date, end_date)
+    # maotai = week_period_strategy('600519.XSHG', 'daily', start_date, end_date)
+    # df_pct['shuanghui_total_pct'] = shuanghui['total_pct']
+    # df_pct['mairui_total_pct'] = mairui['total_pct']
+    # df_pct['maotai_total_pct'] = maotai['total_pct']
+
+    # df = st.get_single_price('600519.XSHG', 'daily', start_date, end_date)
+    # # print(df)
+    # df = calculate_max_drawdown(df)
+    # print(df[['close', 'roll_max', 'daily_dd', 'max_dd']])
+    # df[['daily_dd', 'max_dd']].plot()
+    # plt.show()
+
+    df = st.get_single_price('000001.XSHE', 'daily', start_date, end_date)
+    sharpe = calculate_sharpe(df)
+    print(sharpe)
+
